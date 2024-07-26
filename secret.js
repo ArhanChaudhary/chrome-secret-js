@@ -1,7 +1,15 @@
 class Secret {
   constructor(secret) {
-    document.dispatchEvent(new CustomEvent("set", { detail: secret }));
-    this.init();
+    return (async () => {
+      window.__secret = this;
+      document.dispatchEvent(new CustomEvent("set", { detail: secret }));
+      await new Promise((resolve) =>
+        document.addEventListener("setSuccess", resolve, { once: true })
+      );
+      delete window.__secret;
+      this.init();
+      return this;
+    })();
   }
 
   init() {
