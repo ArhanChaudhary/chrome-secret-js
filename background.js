@@ -1,65 +1,43 @@
-let _secrets = {};
+const DB_NAME = "SecretsDB";
+const DB_VERSION = 1;
+const OBJECT_STORE_NAME = "secrets";
 
-async function onContentMessage(
+chrome.runtime.onMessage.addListener(function (
   message,
-  { documentId, tab: { id: tabId } },
+  { documentId },
   sendResponse
 ) {
   if (message.type === "set") {
-    if (_secrets[documentId]) {
-      sendResponse();
-      return;
-    }
-    _secrets[documentId] = {};
+    openDbStore(documentId, "readwrite").then(async (store) => {
+      let event = await new Promise((resolve) => {
+        store.get(documentId).onsuccess = resolve;
+      });
+      let data = event.target.result || { documentId, secrets: {} };
 
-    await new Promise((resolve) =>
-      chrome.debugger.attach({ tabId }, "1.3", resolve)
-    );
-    await chrome.debugger.sendCommand({ tabId }, "HeapProfiler.enable");
-    await chrome.debugger.sendCommand(
-      { tabId },
-      "HeapProfiler.takeHeapSnapshot"
-    );
-
-    let secretObjectIds = await Promise.all(
-      [...Array(message.secrets.length).keys()].map((i) =>
-        chrome.debugger
-          .sendCommand({ tabId }, "Runtime.evaluate", {
-            expression: `window.__secret${i}`,
-          })
-          .then(({ result: { objectId } }) => objectId)
-      )
-    );
-    let secretHeapObjectIds = await Promise.all(
-      secretObjectIds.map((secretObjectId) =>
-        chrome.debugger
-          .sendCommand({ tabId }, "HeapProfiler.getHeapObjectId", {
-            objectId: secretObjectId,
-          })
-          .then(({ heapSnapshotObjectId }) => heapSnapshotObjectId)
-      )
-    );
-    for (let [i, secretHeapObjectId] of Object.entries(secretHeapObjectIds)) {
-      _secrets[documentId][secretHeapObjectId] = message.secrets[i];
-    }
-    sendResponse();
+      data.secrets[message.secretId] = message.secret;
+      store.put(data).onsuccess = sendResponse;
+    });
+    return true;
   } else if (message.type === "get") {
-    let secretHeapObjectId;
-    let secretObjectId = await chrome.debugger
-      .sendCommand({ tabId }, "Runtime.evaluate", {
-        expression: message.secretObjectStr,
-      })
-      .then(({ result: { objectId } }) => objectId);
-    secretHeapObjectId = await chrome.debugger
-      .sendCommand({ tabId }, "HeapProfiler.getHeapObjectId", {
-        objectId: secretObjectId,
-      })
-      .then(({ heapSnapshotObjectId }) => heapSnapshotObjectId);
-    sendResponse(_secrets[documentId][secretHeapObjectId]);
-  }
-}
+    openDbStore(documentId, "readonly").then(async (store) => {
+      let event = await new Promise((resolve) => {
+        store.get(documentId).onsuccess = resolve;
+      });
+      let data = event.target.result;
 
-chrome.runtime.onMessage.addListener(function () {
-  onContentMessage(...arguments);
-  return true;
+      sendResponse(data?.secrets[message.secretId]);
+    });
+    return true;
+  }
 });
+
+async function openDbStore(documentId, mode) {
+  let event = await new Promise((resolve) => {
+    indexedDB.open(DB_NAME, DB_VERSION).onsuccess = resolve;
+  });
+  let db = event.target.result;
+  let store = db
+    .transaction([OBJECT_STORE_NAME], mode)
+    .objectStore(OBJECT_STORE_NAME);
+  return store;
+}
