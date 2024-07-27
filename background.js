@@ -1,5 +1,5 @@
 const DB_NAME = "SecretsDB";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const OBJECT_STORE_NAME = "secrets";
 
 chrome.runtime.onMessage.addListener(function (
@@ -9,22 +9,19 @@ chrome.runtime.onMessage.addListener(function (
 ) {
   if (message.type === "set") {
     openDbStore("readwrite").then(async (store) => {
-      let data = await new Promise((resolve) => {
-        store.get(documentId).onsuccess = (e) =>
-          resolve(e.target.result || { documentId, secrets: {} });
-      });
-
-      data.secrets[message.secretId] = message.secret;
-      store.put(data).onsuccess = sendResponse;
+      store.get(documentId).onsuccess = (e) => {
+        let data = e.target.result || { documentId, secrets: {} };
+        data.secrets[message.secretId] = message.secret;
+        store.put(data).onsuccess = sendResponse;
+      };
     });
     return true;
   } else if (message.type === "get") {
-    openDbStore("readonly").then(async (store) => {
-      let data = await new Promise((resolve) => {
-        store.get(documentId).onsuccess = (e) => resolve(e.target.result);
-      });
-
-      sendResponse(data?.secrets[message.secretId]);
+    openDbStore("readonly").then((store) => {
+      store.get(documentId).onsuccess = (e) => {
+        let data = e.target.result;
+        sendResponse(data?.secrets[message.secretId]);
+      };
     });
     return true;
   }
