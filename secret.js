@@ -1,24 +1,23 @@
 class Secret {
+  static secretId = 0;
+
   constructor(secret, secretId) {
-    if (secretId === undefined) {
-      throw new Error("A unique secret id is required");
-    }
+    this.secretId = Secret.secretId++;
     document.dispatchEvent(
       new CustomEvent("set", { detail: { secret, secretId } })
     );
-    this.init();
   }
 
-  init() {
-    this.secret = new Promise((resolve) =>
+  async get() {
+    document.dispatchEvent(new CustomEvent("get", { detail: this.secretId }));
+    return await new Promise((resolve) => {
       document.addEventListener(
         "secret",
         (e) => {
-          this.init();
           resolve(e.detail);
         },
         { once: true }
-      )
-    );
+      );
+    });
   }
 }

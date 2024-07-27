@@ -8,7 +8,7 @@ chrome.runtime.onMessage.addListener(function (
   sendResponse
 ) {
   if (message.type === "set") {
-    openDbStore(documentId, "readwrite").then(async (store) => {
+    openDbStore("readwrite").then(async (store) => {
       let event = await new Promise((resolve) => {
         store.get(documentId).onsuccess = resolve;
       });
@@ -19,7 +19,7 @@ chrome.runtime.onMessage.addListener(function (
     });
     return true;
   } else if (message.type === "get") {
-    openDbStore(documentId, "readonly").then(async (store) => {
+    openDbStore("readonly").then(async (store) => {
       let event = await new Promise((resolve) => {
         store.get(documentId).onsuccess = resolve;
       });
@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener(function (
   }
 });
 
-async function openDbStore(documentId, mode) {
+async function openDbStore(mode) {
   let event = await new Promise((resolve) => {
     indexedDB.open(DB_NAME, DB_VERSION).onsuccess = resolve;
   });
