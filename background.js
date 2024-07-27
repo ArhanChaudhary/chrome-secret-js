@@ -9,10 +9,10 @@ chrome.runtime.onMessage.addListener(function (
 ) {
   if (message.type === "set") {
     openDbStore("readwrite").then(async (store) => {
-      let event = await new Promise((resolve) => {
-        store.get(documentId).onsuccess = resolve;
+      let data = await new Promise((resolve) => {
+        store.get(documentId).onsuccess = (e) =>
+          resolve(e.target.result || { documentId, secrets: {} });
       });
-      let data = event.target.result || { documentId, secrets: {} };
 
       data.secrets[message.secretId] = message.secret;
       store.put(data).onsuccess = sendResponse;
@@ -20,10 +20,9 @@ chrome.runtime.onMessage.addListener(function (
     return true;
   } else if (message.type === "get") {
     openDbStore("readonly").then(async (store) => {
-      let event = await new Promise((resolve) => {
-        store.get(documentId).onsuccess = resolve;
+      let data = await new Promise((resolve) => {
+        store.get(documentId).onsuccess = (e) => resolve(e.target.result);
       });
-      let data = event.target.result;
 
       sendResponse(data?.secrets[message.secretId]);
     });
@@ -32,12 +31,16 @@ chrome.runtime.onMessage.addListener(function (
 });
 
 async function openDbStore(mode) {
-  let event = await new Promise((resolve) => {
-    indexedDB.open(DB_NAME, DB_VERSION).onsuccess = resolve;
+  let request = indexedDB.open(DB_NAME, DB_VERSION);
+  request.onupgradeneeded = function (e) {
+    let db = e.target.result;
+    db.createObjectStore(OBJECT_STORE_NAME, { keyPath: "documentId" });
+  };
+  let db = await new Promise((resolve) => {
+    request.onsuccess = (e) => resolve(e.target.result);
   });
-  let db = event.target.result;
   let store = db
-    .transaction([OBJECT_STORE_NAME], mode)
+    .transaction(OBJECT_STORE_NAME, mode)
     .objectStore(OBJECT_STORE_NAME);
   return store;
 }

@@ -1,10 +1,10 @@
 class Secret {
   static secretId = 0;
 
-  constructor(secret, secretId) {
+  constructor(secret) {
     this.secretId = Secret.secretId++;
     document.dispatchEvent(
-      new CustomEvent("set", { detail: { secret, secretId } })
+      new CustomEvent("set", { detail: { secret, secretId: this.secretId } })
     );
   }
 
