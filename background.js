@@ -8,7 +8,7 @@ chrome.runtime.onMessage.addListener(function (
   sendResponse
 ) {
   if (message.type === "set") {
-    openDbStore("readwrite").then(async (store) => {
+    openDbStore("readwrite").then((store) => {
       store.get(documentId).onsuccess = (e) => {
         let data = e.target.result || { documentId, secrets: {} };
         data.secrets[message.secretId] = message.secret;
