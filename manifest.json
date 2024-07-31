@@ -1,6 +1,6 @@
 {
   "name": "Secret",
-  "description": "An extension that provides true private state",
+  "description": "An extension that provides private state outside of Chrome",
   "version": "0.1",
   "manifest_version": 3,
   "permissions": ["nativeMessaging"],
