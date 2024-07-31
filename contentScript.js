@@ -1,7 +1,5 @@
 document.addEventListener("set", function ({ detail: { secret, secretId } }) {
-  chrome.runtime.sendMessage({ type: "set", secret, secretId }, () => {
-    document.dispatchEvent(new CustomEvent("setSuccess", { detail: secretId }));
-  });
+  chrome.runtime.sendMessage({ type: "set", secret, secretId });
 });
 
 document.addEventListener("get", function ({ detail: secretId }) {

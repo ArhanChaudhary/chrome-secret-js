@@ -6,15 +6,6 @@ class Secret {
     document.dispatchEvent(
       new CustomEvent("set", { detail: { secret, secretId: this.secretId } })
     );
-    // return new Promise((resolve) => {
-    //   let onSetSuccess = ({ detail: secretId }) => {
-    //     if (secretId === this.secretId) {
-    //       resolve(this);
-    //       document.removeEventListener("setSuccess", onSetSuccess);
-    //     }
-    //   };
-    //   document.addEventListener("setSuccess", onSetSuccess);
-    // });
   }
 
   async get() {

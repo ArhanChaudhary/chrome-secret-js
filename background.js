@@ -1,65 +1,34 @@
-// chrome.runtime.onMessage.addListener(function (
-//   message,
-//   { documentId },
-//   sendResponse
-// ) {
-//   if (message.type === "set") {
-//     chrome.runtime.sendNativeMessage(
-//       "secret",
-//       {
-//         secret: JSON.stringify(message.secret),
-//         secretId: message.secretId,
-//         documentId,
-//         type: "set",
-//       },
-//       sendResponse
-//     );
-//     return true;
-//   } else if (message.type === "get") {
-//     chrome.runtime.sendNativeMessage(
-//       "secret",
-//       {
-//         secretId: message.secretId,
-//         documentId,
-//         type: "get",
-//       },
-//       (secret) => sendResponse(JSON.parse(secret))
-//     );
-//     return true;
-//   }
-// });
-
 let port = chrome.runtime.connectNative("secret");
 let requestId = 0;
 let pendingRequests = new Map();
 
-port.onMessage.addListener((response) => {
-  debugger;
-  if (pendingRequests.has(response.requestId)) {
-    let sendResponse = pendingRequests.get(response.requestId);
-    if (response.type === "get") {
-      sendResponse(JSON.parse(response.secret));
-    } else if (response.type === "set") {
-      sendResponse();
-    }
-    pendingRequests.delete(response.requestId);
+port.onMessage.addListener(({ requestId, secret }) => {
+  if (pendingRequests.has(requestId)) {
+    let sendResponse = pendingRequests.get(requestId);
+    pendingRequests.delete(requestId);
+    sendResponse(JSON.parse(secret));
   }
 });
 
 chrome.runtime.onMessage.addListener(
   (message, { documentId }, sendResponse) => {
-    let currentRequestId = ++requestId;
-    let messageData = {
-      type: message.type,
-      secretId: message.secretId,
-      documentId,
-      requestId: currentRequestId,
-    };
     if (message.type === "set") {
-      messageData.secret = JSON.stringify(message.secret);
+      port.postMessage({
+        type: message.type,
+        secretId: message.secretId,
+        documentId,
+        secret: JSON.stringify(message.secret),
+      });
+    } else if (message.type === "get") {
+      let nextRequestId = ++requestId;
+      pendingRequests.set(nextRequestId, sendResponse);
+      port.postMessage({
+        type: message.type,
+        secretId: message.secretId,
+        documentId,
+        requestId: nextRequestId,
+      });
+      return true;
     }
-    pendingRequests.set(currentRequestId, sendResponse);
-    port.postMessage(messageData);
-    return true;
   }
 );

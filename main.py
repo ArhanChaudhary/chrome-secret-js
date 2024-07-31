@@ -53,7 +53,6 @@ def handleMessage(cur, message):
             "REPLACE INTO secrets VALUES (?, ?, ?)",
             (message["documentId"], message["secretId"], message["secret"]),
         )
-        writeMessage({"requestId": message["requestId"], "type": "set"})
     elif message["type"] == "get":
         cur.execute(
             "SELECT secret FROM secrets WHERE documentId = ? AND secretId = ?",
@@ -64,9 +63,7 @@ def handleMessage(cur, message):
             secret = None
         else:
             secret = row[0]
-        writeMessage(
-            {"requestId": message["requestId"], "type": "get", "secret": secret}
-        )
+        writeMessage({"requestId": message["requestId"], "secret": secret})
 
 
 main()
