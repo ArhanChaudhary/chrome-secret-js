@@ -1,43 +1,65 @@
-const DB_NAME = "SecretsDB";
-const DB_VERSION = 2;
-const OBJECT_STORE_NAME = "secrets";
+// chrome.runtime.onMessage.addListener(function (
+//   message,
+//   { documentId },
+//   sendResponse
+// ) {
+//   if (message.type === "set") {
+//     chrome.runtime.sendNativeMessage(
+//       "secret",
+//       {
+//         secret: JSON.stringify(message.secret),
+//         secretId: message.secretId,
+//         documentId,
+//         type: "set",
+//       },
+//       sendResponse
+//     );
+//     return true;
+//   } else if (message.type === "get") {
+//     chrome.runtime.sendNativeMessage(
+//       "secret",
+//       {
+//         secretId: message.secretId,
+//         documentId,
+//         type: "get",
+//       },
+//       (secret) => sendResponse(JSON.parse(secret))
+//     );
+//     return true;
+//   }
+// });
 
-chrome.runtime.onMessage.addListener(function (
-  message,
-  { documentId },
-  sendResponse
-) {
-  if (message.type === "set") {
-    openDbStore("readwrite").then((store) => {
-      store.get(documentId).onsuccess = (e) => {
-        let data = e.target.result || { documentId, secrets: {} };
-        data.secrets[message.secretId] = message.secret;
-        store.put(data).onsuccess = sendResponse;
-      };
-    });
-    return true;
-  } else if (message.type === "get") {
-    openDbStore("readonly").then((store) => {
-      store.get(documentId).onsuccess = (e) => {
-        let data = e.target.result;
-        sendResponse(data?.secrets[message.secretId]);
-      };
-    });
-    return true;
+let port = chrome.runtime.connectNative("secret");
+let requestId = 0;
+let pendingRequests = new Map();
+
+port.onMessage.addListener((response) => {
+  debugger;
+  if (pendingRequests.has(response.requestId)) {
+    let sendResponse = pendingRequests.get(response.requestId);
+    if (response.type === "get") {
+      sendResponse(JSON.parse(response.secret));
+    } else if (response.type === "set") {
+      sendResponse();
+    }
+    pendingRequests.delete(response.requestId);
   }
 });
 
-async function openDbStore(mode) {
-  let request = indexedDB.open(DB_NAME, DB_VERSION);
-  request.onupgradeneeded = function (e) {
-    let db = e.target.result;
-    db.createObjectStore(OBJECT_STORE_NAME, { keyPath: "documentId" });
-  };
-  let db = await new Promise((resolve) => {
-    request.onsuccess = (e) => resolve(e.target.result);
-  });
-  let store = db
-    .transaction(OBJECT_STORE_NAME, mode)
-    .objectStore(OBJECT_STORE_NAME);
-  return store;
-}
+chrome.runtime.onMessage.addListener(
+  (message, { documentId }, sendResponse) => {
+    let currentRequestId = ++requestId;
+    let messageData = {
+      type: message.type,
+      secretId: message.secretId,
+      documentId,
+      requestId: currentRequestId,
+    };
+    if (message.type === "set") {
+      messageData.secret = JSON.stringify(message.secret);
+    }
+    pendingRequests.set(currentRequestId, sendResponse);
+    port.postMessage(messageData);
+    return true;
+  }
+);

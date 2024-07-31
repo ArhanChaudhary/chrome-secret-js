@@ -1,8 +1,9 @@
 {
-  "name": "Private State",
+  "name": "Secret",
+  "description": "An extension that provides true private state",
   "version": "0.1",
   "manifest_version": 3,
-  "permissions": ["debugger"],
+  "permissions": ["nativeMessaging"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "background.js"
