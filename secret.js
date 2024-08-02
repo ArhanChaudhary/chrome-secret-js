@@ -11,13 +11,13 @@ class Secret {
   async get() {
     document.dispatchEvent(new CustomEvent("get", { detail: this.secretId }));
     return await new Promise((resolve) => {
-      let onSecret = ({ detail: { secret, secretId } }) => {
+      let onGetResponse = ({ detail: { secret, secretId } }) => {
         if (secretId === this.secretId) {
           resolve(secret);
-          document.removeEventListener("secret", onSecret);
+          document.removeEventListener("getResponse", onGetResponse);
         }
       };
-      document.addEventListener("secret", onSecret);
+      document.addEventListener("getResponse", onGetResponse);
     });
   }
 }

@@ -8,9 +8,7 @@ import sqlite3
 
 def main():
     conn = sqlite3.connect("secrets.db")
-    conn.isolation_level = "EXCLUSIVE"
     cur = conn.cursor()
-    cur.execute("BEGIN EXCLUSIVE")
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS secrets(
@@ -25,26 +23,8 @@ def main():
 
     while True:
         message = readMessage()
-        sys.stderr.write(f"{message} started\n")
-        cur.execute("BEGIN EXCLUSIVE")
-        sys.stderr.write(f"{message} excl lock\n")
         handleMessage(cur, message)
         conn.commit()
-        sys.stderr.write(f"{message} ended\n")
-
-
-def readMessage():
-    messageLength = struct.unpack("@I", sys.stdin.buffer.read(4))[0]
-    message = sys.stdin.buffer.read(messageLength).decode("utf-8")
-    return json.loads(message)
-
-
-def writeMessage(message):
-    encoded = json.dumps(message).encode("utf-8")
-    encodedLength = struct.pack("@I", len(encoded))
-    sys.stdout.buffer.write(encodedLength)
-    sys.stdout.buffer.write(encoded)
-    sys.stdout.buffer.flush()
 
 
 def handleMessage(cur, message):
@@ -64,6 +44,20 @@ def handleMessage(cur, message):
         else:
             secret = row[0]
         writeMessage({"requestId": message["requestId"], "secret": secret})
+
+
+def readMessage():
+    messageLength = struct.unpack("@I", sys.stdin.buffer.read(4))[0]
+    message = sys.stdin.buffer.read(messageLength).decode("utf-8")
+    return json.loads(message)
+
+
+def writeMessage(message):
+    encoded = json.dumps(message).encode("utf-8")
+    encodedLength = struct.pack("@I", len(encoded))
+    sys.stdout.buffer.write(encodedLength)
+    sys.stdout.buffer.write(encoded)
+    sys.stdout.buffer.flush()
 
 
 main()

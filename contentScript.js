@@ -5,7 +5,7 @@ document.addEventListener("set", function ({ detail: { secret, secretId } }) {
 document.addEventListener("get", function ({ detail: secretId }) {
   chrome.runtime.sendMessage({ type: "get", secretId }, (secret) => {
     document.dispatchEvent(
-      new CustomEvent("secret", { detail: { secret, secretId } })
+      new CustomEvent("getResponse", { detail: { secret, secretId } })
     );
   });
 });
