@@ -3,6 +3,7 @@
   "description": "An extension that provides private state outside of Chrome",
   "version": "0.1",
   "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtkw5YqVyjw16cTjM+e+2PP9TWDbDACnhr2vwTmmymyvdQc4HM2bnSTMVt0SgMKSVjuWcxYhUfa6xDBBRDpcB9U4muqNL9/1cNy/gFawlEwr4Ms9RAY3XVnZv5nFm5e2BMXsMpxhH3uu3utPitDHSs45zVwoHVIXb2kT1WJIcCsgQDNsCAty23SS2kVnG9KhhcY8DG7fIDH7mz0ZfekFx17M5IXlT6nYJs3tMWfne3rueV0wLFCg/vcZ+WD7H5p0TZCCxIdZfZxci7uWpElZdrIKpjSvf0xqz+mddv77utbwo0F4vMhWt9l2tOrs5fKx2PPt2u1ZWf1MHLM/D1KtprQIDAQAB",
   "permissions": ["nativeMessaging"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {

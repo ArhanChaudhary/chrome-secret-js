@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener(
         secret: JSON.stringify(message.secret),
       });
     } else if (message.type === "get") {
-      let nextRequestId = ++requestId;
+      let nextRequestId = requestId++;
       pendingRequests.set(nextRequestId, sendResponse);
       port.postMessage({
         type: message.type,
