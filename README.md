@@ -1,6 +1,6 @@
-# secret-js
+# chrome-secret-js
 
-secret-js is an extension that provides true private state within Chrome without the use of networking or cryptography, as defined per my blog https://arhan.sh/blog/true-private-state-in-javascript-a-chromium-rabbit-hole/.
+chrome-secret-js is an extension that provides true private state within Chrome without the use of networking or cryptography, as defined per my blog https://arhan.sh/blog/true-private-state-in-javascript-a-chromium-rabbit-hole/.
 
 # Installation
 
